@@ -1,27 +1,14 @@
 <template>
   <section class="container simple-list-main">
-    <article class="post container mt-4" v-for="(item) in items" :key="item.id">
-      <header class="post__header row">
-        <div class="col-8 post__user-name">
-          {{ item.user.name }}
-        </div>
-        <time class="col-4 post__date">
-          {{ item.created_at|convertDate }}
-        </time>
-      </header>
-
-      <div class="row">
-        <p class="col-12 p-2 post__text">
-          {{ item.text }}<br/>
-        </p>
-      </div>
-    </article>
+    <Article v-for="(item) in items" :key="item.id" :item="item" />
   </section>
 </template>
 
 <script>
+import Article from "../Article";
 export default {
   name: "MainView",
+  components: {Article},
   props: {
     postLimit: {
       type: Number,
@@ -38,12 +25,14 @@ export default {
   },
   data: function () {
       return {
-        items: []
+        items: [],
+        realUpdateInterval: 1000,
+        updateIntervalMin: 1000,
+        intervalObject: null
       }
     },
   mounted() {
-    this.loadData();
-    setInterval(this.loadData, this.updateInterval);
+    this.setNewUpdateInterval();
   },
   filters: {
     convertDate(inputFormat) {
@@ -68,29 +57,28 @@ export default {
           .catch((error) => {
             console.log(error);
           });
+    },
+    setNewUpdateInterval() {
+      this.realUpdateInterval = Math.max(this.updateInterval, this.updateIntervalMin);
+
+      if (this.intervalObject) {
+        clearInterval(this.intervalObject);
+      }
+
+      this.intervalObject = setInterval(this.loadData, this.realUpdateInterval);
+    },
+  },
+  watch: {
+    updateInterval: function () {
+      this.setNewUpdateInterval();
     }
+  },
+  beforeDestroy() {
+    clearInterval(this.intervalObject);
   }
 }
 </script>
 
 <style scoped>
-  .post {
-    background: #dcdcff;
-    color: #402701;
-    font-size: 19px;
-    border: 2px solid #1b002d;
-  }
 
-  .post .post__header {
-    background: #a5a5ff;
-  }
-
-  .post .post__date {
-    font-size: 15px;
-  }
-
-  .post .post__user-name {
-    text-align: left;
-    font-weight: 600;
-  }
 </style>
